@@ -9,13 +9,15 @@ import SpriteKit
 import GameplayKit
 
 class GameScene: SKScene {
-    
+
     var entities = [GKEntity]()
     var graphs = [String : GKGraph]()
-    
+
     private var lastUpdateTime : TimeInterval = 0
     private var label : SKLabelNode?
     private var spinnyNode : SKShapeNode?
+    private var player: SKSpriteNode!
+    private let playerSpeed: CGFloat = 200.0
     
     override func sceneDidLoad() {
 
@@ -34,12 +36,21 @@ class GameScene: SKScene {
         
         if let spinnyNode = self.spinnyNode {
             spinnyNode.lineWidth = 2.5
-            
+
             spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1)))
             spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
                                               SKAction.fadeOut(withDuration: 0.5),
                                               SKAction.removeFromParent()]))
         }
+
+        self.physicsBody = SKPhysicsBody(edgeLoopFrom: self.frame)
+
+        self.player = SKSpriteNode(color: .cyan, size: CGSize(width: 50, height: 50))
+        self.player.position = CGPoint(x: -self.size.width/4, y: 0)
+        self.player.physicsBody = SKPhysicsBody(rectangleOf: self.player.size)
+        self.player.physicsBody?.allowsRotation = false
+        self.addChild(self.player)
+        self.player.physicsBody?.velocity = CGVector(dx: playerSpeed, dy: 0)
     }
     
     
@@ -71,7 +82,7 @@ class GameScene: SKScene {
         if let label = self.label {
             label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
         }
-        
+        self.player.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
         for t in touches { self.touchDown(atPoint: t.location(in: self)) }
     }
     
@@ -103,7 +114,10 @@ class GameScene: SKScene {
         for entity in self.entities {
             entity.update(deltaTime: dt)
         }
-        
+
+        if let body = self.player.physicsBody {
+            self.player.physicsBody?.velocity = CGVector(dx: playerSpeed, dy: body.velocity.dy)
+        }
         self.lastUpdateTime = currentTime
     }
 }
